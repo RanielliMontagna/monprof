@@ -8,7 +8,7 @@ import type { IpcMainInvokeEvent } from "electron";
 import { BrowserWindow, app, ipcMain } from "electron";
 import { getConfig, setConfig } from "../../src/core/kscreen.js";
 import { getProfile, readProfiles, saveProfile } from "../../src/core/profiles.js";
-import { setupTray } from "./tray.js";
+import { destroyTray, setupTray, updateTrayMenu } from "./tray.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,9 +68,9 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
-  setupTray(mainWindow);
+  await setupTray(mainWindow);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -83,6 +83,10 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  destroyTray();
 });
 
 // IPC Handlers
@@ -112,6 +116,7 @@ ipcMain.handle("profiles:save", async (_evt: IpcMainInvokeEvent, name: string) =
 
   const currentConfig = await getConfig();
   await saveProfile(name, { outputs: currentConfig.outputs });
+  await updateTrayMenu(); // Update tray menu after saving
   return true;
 });
 
@@ -141,6 +146,7 @@ ipcMain.handle(
     }
 
     await saveProfile(payload.name, payload.profile);
+    await updateTrayMenu(); // Update tray menu after updating
     return true;
   }
 );

@@ -150,4 +150,4 @@ monprof/
 - ✅ CLI interface
 - ✅ Electron GUI
 - ✅ React UI
-- ⏳ System tray implementation
+- ✅ System tray implementation

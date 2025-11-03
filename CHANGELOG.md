@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/RanielliMontagna/monprof/compare/v1.0.0...v1.1.0) (2025-11-03)
+
+
+### Features
+
+* enhance type safety and DBus integration in KScreen ([5fffd59](https://github.com/RanielliMontagna/monprof/commit/5fffd59114ebcbba1cbb9d0402b327aa8df047a1))
+
 ## 1.0.0 (2025-11-03)
 
 

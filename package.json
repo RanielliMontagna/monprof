@@ -1,6 +1,6 @@
 {
   "name": "monprof",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Monitor Profiles Switcher for KDE Plasma (Wayland)",
   "main": "dist/apps/electron/main.js",
   "type": "module",

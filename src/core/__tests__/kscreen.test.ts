@@ -119,7 +119,12 @@ describe("KScreen Config Normalization", () => {
         outputs?: Array<Record<string, unknown>>;
       };
       expect(result.outputs).toBeDefined();
-      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
+      if (
+        result.outputs &&
+        Array.isArray(result.outputs) &&
+        result.outputs.length > 0 &&
+        result.outputs[0]
+      ) {
         expect(result.outputs[0]).toMatchObject({
           name: "DP-1",
           enabled: true,
@@ -157,8 +162,13 @@ describe("KScreen Config Normalization", () => {
           ],
         };
 
-      const result = denormalize(config) as { outputs?: Array<Record<string, unknown>> };
-      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
+        const result = denormalize(config) as { outputs?: Array<Record<string, unknown>> };
+        if (
+          result.outputs &&
+          Array.isArray(result.outputs) &&
+          result.outputs.length > 0 &&
+          result.outputs[0]
+        ) {
           expect(result.outputs[0].rotation).toBe(expected);
         }
       }
@@ -178,7 +188,12 @@ describe("KScreen Config Normalization", () => {
       const result = denormalize(config as { outputs: DisplayOutput[] }) as {
         outputs?: Array<Record<string, unknown>>;
       };
-      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
+      if (
+        result.outputs &&
+        Array.isArray(result.outputs) &&
+        result.outputs.length > 0 &&
+        result.outputs[0]
+      ) {
         const output = result.outputs[0];
         if (output && "currentMode" in output) {
           const mode = (output as Record<string, unknown>).currentMode as
@@ -203,7 +218,12 @@ describe("KScreen Config Normalization", () => {
       const result = denormalize(config as { outputs: DisplayOutput[] }) as {
         outputs?: Array<Record<string, unknown>>;
       };
-      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
+      if (
+        result.outputs &&
+        Array.isArray(result.outputs) &&
+        result.outputs.length > 0 &&
+        result.outputs[0]
+      ) {
         expect(result.outputs[0]).toMatchObject({
           name: "HDMI-1",
           enabled: false,

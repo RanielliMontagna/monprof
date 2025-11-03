@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import type { IpcMainInvokeEvent } from "electron";
 import { BrowserWindow, app, ipcMain } from "electron";
 import { getConfig, setConfig } from "../../src/core/kscreen.js";
-import { getProfile, readProfiles, saveProfile } from "../../src/core/profiles.js";
+import { deleteProfile, getProfile, readProfiles, saveProfile } from "../../src/core/profiles.js";
 import { destroyTray, setupTray, updateTrayMenu } from "./tray.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -154,4 +154,17 @@ ipcMain.handle(
 ipcMain.handle("profiles:getCurrent", async (_evt: IpcMainInvokeEvent) => {
   const config = await getConfig();
   return config;
+});
+
+ipcMain.handle("profiles:delete", async (_evt: IpcMainInvokeEvent, name: string) => {
+  if (typeof name !== "string" || name.trim().length === 0) {
+    throw new Error("Profile name must be a non-empty string");
+  }
+
+  const deleted = await deleteProfile(name);
+  if (!deleted) {
+    throw new Error(`Profile '${name}' not found`);
+  }
+  await updateTrayMenu(); // Update tray menu after deleting
+  return true;
 });

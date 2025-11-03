@@ -4,7 +4,7 @@
 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type BrowserWindow, Menu, nativeImage, Tray, app } from "electron";
+import { type BrowserWindow, Menu, Tray, app, nativeImage } from "electron";
 import { setConfig } from "../../src/core/kscreen.js";
 import { getProfile, listProfileNames } from "../../src/core/profiles.js";
 
@@ -22,7 +22,7 @@ function createTrayIcon(): Electron.NativeImage {
   // Using nativeImage.createEmpty() and then drawing would be complex,
   // so we'll use a template icon approach or fallback to system icon
   const iconPath = join(__dirname, "../../../assets/icon.png");
-  
+
   try {
     // Try to load icon from assets
     return nativeImage.createFromPath(iconPath);
@@ -45,7 +45,7 @@ export async function setupTray(window: BrowserWindow | null): Promise<void> {
 
   // Create tray icon (will use system default if no icon available)
   const icon = createTrayIcon();
-  
+
   // If icon is empty, Electron will use system default or app icon
   if (icon.isEmpty()) {
     // Use empty icon - system will provide default

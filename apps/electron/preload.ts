@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("monprof", {
   update: (payload: { name: string; profile: { outputs: unknown[] } }) =>
     ipcRenderer.invoke("profiles:update", payload),
   getCurrent: () => ipcRenderer.invoke("profiles:getCurrent"),
+  delete: (name: string) => ipcRenderer.invoke("profiles:delete", name),
 });
 
 // Type declarations for TypeScript
@@ -23,6 +24,7 @@ declare global {
       save: (name: string) => Promise<boolean>;
       update: (payload: { name: string; profile: { outputs: unknown[] } }) => Promise<boolean>;
       getCurrent: () => Promise<{ outputs: unknown[] }>;
+      delete: (name: string) => Promise<boolean>;
     };
   }
 }

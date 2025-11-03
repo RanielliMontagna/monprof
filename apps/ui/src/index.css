@@ -120,6 +120,23 @@ body {
   transform: scale(0.95);
 }
 
+.btn-danger {
+  background-color: var(--color-catppuccin-red);
+  color: var(--color-catppuccin-crust);
+}
+
+.btn-danger:hover {
+  background-color: var(--color-catppuccin-maroon);
+}
+
+.btn-danger:focus {
+  --tw-ring-color: var(--color-catppuccin-red);
+}
+
+.btn-danger:active {
+  transform: scale(0.95);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

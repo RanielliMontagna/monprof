@@ -97,6 +97,27 @@ function App() {
     }
   };
 
+  const handleDeleteProfile = async (name: string) => {
+    if (!window.monprof) {
+      alert("Monprof API not available");
+      return;
+    }
+
+    try {
+      await window.monprof.delete(name);
+      await loadProfiles();
+      // Clear selection if deleted profile was selected
+      if (selectedProfile === name) {
+        const remaining = Object.keys(profiles).filter((n) => n !== name);
+        setSelectedProfile(remaining.length > 0 ? remaining[0] : null);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`Failed to delete profile ${name}:`, err);
+      alert(`Failed to delete profile: ${errorMessage}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-catppuccin-base">
@@ -128,12 +149,13 @@ function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-catppuccin-base">
       <Header onSaveClick={() => setShowSaveModal(true)} />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden flex-col sm:flex-row">
         <Sidebar
           profiles={profiles}
           selectedProfile={selectedProfile}
           onSelect={setSelectedProfile}
           onApply={handleApplyProfile}
+          onDelete={handleDeleteProfile}
         />
         <MainPanel
           profileName={selectedProfile}

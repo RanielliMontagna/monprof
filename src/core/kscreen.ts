@@ -8,7 +8,7 @@
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: dbus-next doesn't export proper types
 let sessionBusFn: ((...args: unknown[]) => any) | null = null;
 
 async function getSessionBus() {
@@ -24,7 +24,7 @@ async function getSessionBus() {
 }
 
 // Type definition for Interface (dbus-next doesn't export types properly)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: dbus-next doesn't export proper types
 type Interface = any;
 
 const KSCREEN_SERVICE = "org.kde.KScreen";
@@ -45,7 +45,6 @@ export interface KScreenConfig {
   outputs: DisplayOutput[];
 }
 
-
 // KScreen returns a map (a{sv}) - dbus-next converts to object
 interface KScreenRawConfig {
   outputs?: Array<Record<string, unknown>>; // Array of variant maps from DBus
@@ -57,19 +56,20 @@ interface KScreenRawConfig {
 /**
  * Ensure backend is available and return the backend path
  */
+// biome-ignore lint/suspicious/noExplicitAny: dbus-next MessageBus type not properly exported
 async function ensureBackend(bus: any): Promise<string> {
   try {
     // First, try to ensure backend is requested
     const mainProxy = await bus.getProxyObject(KSCREEN_SERVICE, "/");
     const mainInterface = mainProxy.getInterface(KSCREEN_INTERFACE_MAIN) as Interface;
-    
+
     // Request backend if needed (this might be necessary on first use)
     try {
       await mainInterface.requestBackend("", {});
     } catch {
       // Backend might already be available, continue
     }
-    
+
     // The backend path is always /backend (verified via busctl tree)
     return KSCREEN_BACKEND_PATH;
   } catch (error) {
@@ -167,7 +167,7 @@ export async function getConfig(): Promise<KScreenConfig> {
   try {
     // Ensure backend is available
     const backendPath = await ensureBackend(bus);
-    
+
     const proxy = await bus.getProxyObject(KSCREEN_SERVICE, backendPath);
     const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as Interface;
     const result = await backend.getConfig();
@@ -189,7 +189,7 @@ export async function setConfig(config: KScreenConfig): Promise<void> {
   try {
     // Ensure backend is available
     const backendPath = await ensureBackend(bus);
-    
+
     const proxy = await bus.getProxyObject(KSCREEN_SERVICE, backendPath);
     const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as Interface;
     const kscreenConfig = denormalizeConfig(config);
@@ -214,7 +214,7 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
 
   for (const outputRaw of kscreenConfig.outputs) {
     // outputRaw is a Record<string, unknown> from DBus variant map
-    
+
     // Get name - required field
     const outputName = outputRaw.name;
     if (!outputName || typeof outputName !== "string") {

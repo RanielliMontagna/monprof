@@ -157,6 +157,22 @@ monprof/
 - ✅ Electron GUI
 - ✅ React UI
 - ✅ System tray implementation
+- ✅ Profile deletion with confirmation
+- ✅ Responsive design for smaller screens
+
+## Features
+
+**Profile Management:**
+- Create, read, update, and delete profiles
+- Delete confirmation modal to prevent accidental removal
+- Profile deletion updates system tray menu automatically
+
+**Responsive Design:**
+- Mobile-first approach with Tailwind CSS breakpoints
+- Sidebar hidden on mobile (can be extended with toggle button if needed)
+- Flexible layouts: `flex-col sm:flex-row` for stacking on mobile
+- Text and button sizing adapts to screen size (`text-sm sm:text-base`)
+- Icon-only buttons on mobile, full labels on larger screens
 
 ## Future Enhancements (Optional)
 
@@ -164,7 +180,7 @@ monprof/
 - Add visual feedback when applying profile (toast/notification)
 - Add keyboard shortcut to show/hide window
 - Profile duplication feature
-- Profile deletion with confirmation
+- Sidebar toggle button for mobile
 - Import/export profiles.json
 - Display detection refresh button
 - Keyboard shortcuts in UI (e.g., Ctrl+S to save)

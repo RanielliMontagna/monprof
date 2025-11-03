@@ -31,10 +31,18 @@ function SaveModal({ onClose, onSave, existingNames }: SaveModalProps) {
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <div
         className="bg-catppuccin-mantle border border-catppuccin-surface1 rounded-xl shadow-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-catppuccin-surface1">

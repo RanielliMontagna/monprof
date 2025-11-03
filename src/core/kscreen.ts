@@ -299,6 +299,52 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
   } else {
     return { outputs: [] };
   }
+
+  // Find the primary display based on priority (lowest priority = primary)
+  // Only consider enabled outputs
+  let primaryOutputIndex = -1;
+  let lowestPriority: number | null = null;
+  
+  for (let i = 0; i < outputsArray.length; i++) {
+    let outputRaw = outputsArray[i];
+    
+    // Unwrap variant if needed
+    let unwrapped: unknown = outputRaw;
+    while (typeof unwrapped === "object" && unwrapped !== null && !Array.isArray(unwrapped)) {
+      const outputObj = unwrapped as Record<string, unknown>;
+      if ("value" in outputObj && !("name" in outputObj)) {
+        unwrapped = outputObj.value;
+      } else {
+        break;
+      }
+    }
+    const output = unwrapped as Record<string, unknown>;
+    
+    // Unwrap all variant values
+    const unwrappedOutput: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(output)) {
+      unwrappedOutput[key] = unwrapVariant(val);
+    }
+    
+    // Check if enabled
+    let enabled = unwrappedOutput.enabled ?? unwrappedOutput.connected ?? false;
+    if (typeof enabled === "number") {
+      enabled = enabled === 1;
+    } else if (typeof enabled === "bigint") {
+      enabled = enabled === BigInt(1);
+    }
+    
+    if (enabled && unwrappedOutput.priority !== undefined) {
+      const priority = unwrappedOutput.priority;
+      const priorityNum = typeof priority === "number" ? priority : typeof priority === "bigint" ? Number(priority) : typeof priority === "string" ? Number.parseInt(priority, 10) : null;
+      if (priorityNum !== null && !Number.isNaN(priorityNum)) {
+        if (lowestPriority === null || priorityNum < lowestPriority) {
+          lowestPriority = priorityNum;
+          primaryOutputIndex = i;
+        }
+      }
+    }
+  }
   
 
   for (let i = 0; i < outputsArray.length; i++) {
@@ -353,9 +399,10 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
       enabled,
     };
 
-    // Primary display
-    if (unwrappedOutput.primary !== undefined && typeof unwrappedOutput.primary === "boolean") {
-      normalized.primary = unwrappedOutput.primary;
+    // Primary display - determined by lowest priority among enabled outputs
+    // Mark as primary if this is the output with lowest priority
+    if (enabled && i === primaryOutputIndex) {
+      normalized.primary = true;
     }
 
     // Rotation
@@ -398,14 +445,29 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
  */
 export function denormalizeConfig(config: KScreenConfig): Record<string, unknown> {
   // KScreen expects a{sv} (map), with 'outputs' key containing array of variant maps
-  const outputs: Array<Record<string, unknown>> = config.outputs.map((out) => {
+  // First, determine priorities based on primary flag
+  // Primary display gets priority 1, others get incrementing priorities (2, 3, ...)
+  const outputs: Array<Record<string, unknown>> = config.outputs.map((out, index) => {
     const kscreenOut: Record<string, unknown> = {
       name: out.name,
       enabled: out.enabled,
     };
 
-    if (out.primary !== undefined) {
-      kscreenOut.primary = out.primary;
+    // KScreen uses priority (lower = primary), not a boolean primary field
+    // Find the primary output index
+    const primaryIndex = config.outputs.findIndex((o) => o.primary === true);
+    if (primaryIndex >= 0 && index === primaryIndex) {
+      kscreenOut.priority = 1; // Primary gets lowest priority (1)
+    } else {
+      // Non-primary outputs get higher priorities
+      // Count how many outputs come before this one that are not primary
+      let priority = 2;
+      for (let i = 0; i < index; i++) {
+        if (!config.outputs[i].primary) {
+          priority++;
+        }
+      }
+      kscreenOut.priority = priority;
     }
 
     if (out.rotation !== undefined) {

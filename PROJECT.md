@@ -153,6 +153,10 @@ monprof/
   - Mode IDs and mode properties also need unwrapping
   - Position uses `pos` key, not `position`
   - Booleans may come as numbers (1/0) or BigInt - convert appropriately
+- **Primary Display**: KScreen uses `priority` field (lower = primary), not a boolean `primary` field
+  - Primary display has `priority: 1`, others have `priority: 2, 3, 4, ...`
+  - Our code converts `priority` to `primary: true/false` for easier use
+  - When saving, converts `primary: true` back to `priority: 1`
 
 ---
 

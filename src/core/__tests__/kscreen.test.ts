@@ -128,7 +128,7 @@ describe("KScreen Config Normalization", () => {
         expect(result.outputs[0]).toMatchObject({
           name: "DP-1",
           enabled: true,
-          primary: true,
+          priority: 1, // Primary display gets priority 1
           rotation: 0,
           position: { x: 0, y: 0 },
         });

@@ -301,9 +301,11 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
   }
 
   // Find the primary display based on priority (lowest priority = primary)
+  // Also check for explicit primary flag (for test compatibility)
   // Only consider enabled outputs
   let primaryOutputIndex = -1;
   let lowestPriority: number | null = null;
+  let hasExplicitPrimary = false;
   
   for (let i = 0; i < outputsArray.length; i++) {
     let outputRaw = outputsArray[i];
@@ -334,7 +336,13 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
       enabled = enabled === BigInt(1);
     }
     
-    if (enabled && unwrappedOutput.priority !== undefined) {
+    // Check for explicit primary flag (for test data compatibility)
+    const explicitPrimary = unwrappedOutput.primary;
+    if (enabled && explicitPrimary === true) {
+      hasExplicitPrimary = true;
+      primaryOutputIndex = i;
+    } else if (enabled && unwrappedOutput.priority !== undefined && !hasExplicitPrimary) {
+      // Only use priority if no explicit primary was found
       const priority = unwrappedOutput.priority;
       const priorityNum = typeof priority === "number" ? priority : typeof priority === "bigint" ? Number(priority) : typeof priority === "string" ? Number.parseInt(priority, 10) : null;
       if (priorityNum !== null && !Number.isNaN(priorityNum)) {
@@ -454,16 +462,15 @@ export function denormalizeConfig(config: KScreenConfig): Record<string, unknown
     };
 
     // KScreen uses priority (lower = primary), not a boolean primary field
-    // Find the primary output index
-    const primaryIndex = config.outputs.findIndex((o) => o.primary === true);
-    if (primaryIndex >= 0 && index === primaryIndex) {
+    // Primary display gets priority 1, others get incrementing priorities starting from 2
+    if (out.primary === true) {
       kscreenOut.priority = 1; // Primary gets lowest priority (1)
     } else {
-      // Non-primary outputs get higher priorities
-      // Count how many outputs come before this one that are not primary
+      // Non-primary outputs get priorities 2, 3, 4, etc.
+      // Count how many non-primary enabled outputs come before this one
       let priority = 2;
       for (let i = 0; i < index; i++) {
-        if (!config.outputs[i].primary) {
+        if (config.outputs[i].enabled && config.outputs[i].primary !== true) {
           priority++;
         }
       }

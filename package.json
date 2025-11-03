@@ -1,6 +1,6 @@
 {
   "name": "monprof",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Monitor Profiles Switcher for KDE Plasma (Wayland)",
   "main": "dist/apps/electron/main.js",
   "type": "module",
@@ -17,7 +17,13 @@
     "lint:fix": "biome check --write .",
     "postinstall": "node scripts/postinstall-electron.js"
   },
-  "keywords": ["kde", "wayland", "monitor", "profiles", "electron"],
+  "keywords": [
+    "kde",
+    "wayland",
+    "monitor",
+    "profiles",
+    "electron"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {

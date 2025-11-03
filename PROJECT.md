@@ -209,27 +209,34 @@ await window.monprof.save("professional");
 
 ---
 
-## UI (first version)
+## UI Design
 
-- **Sidebar**: list of profiles
-  - click → apply
-  - right-click → edit / delete
-- **Main panel**:
-  - shows outputs for that profile
-  - dropdowns for:
-    - enabled/on/off
-    - primary
-    - rotation
-    - mode
-  - “Save profile”
-- **Header**:
-  - “Save current KDE layout as…” (opens small modal)
+### Design System
 
-Later:
+- **Framework**: Tailwind CSS with custom Catppuccin color palette
+- **Icons**: Lucide React (lightweight, consistent icon set)
+- **Responsive**: Mobile-first design with breakpoints (sm, md, lg)
+- **Accessibility**: Proper labels, ARIA attributes, keyboard navigation
 
-- “detect displays now”
-- “import/export profiles.json”
+### Components
 
+- **Header**: Application title, logo, and primary action (Save Current Layout)
+- **Sidebar**: 
+  - Profile list with visual feedback
+  - Display count per profile
+  - Quick apply button on hover
+  - Empty state with helpful message
+- **Main Panel**:
+  - Profile details with display count
+  - Unsaved changes indicator
+  - Display configuration cards with icons and clear labels
+  - Responsive grid layout
+- **Save Modal**: Clean modal with backdrop blur, input validation, keyboard shortcuts
+
+### UX Principles
+
+- Visual feedback, progressive disclosure, clear affordances
+- Error prevention, accessibility, responsive design
 ---
 
 ## Tray
@@ -268,9 +275,13 @@ monprof/
 │     │  │  ├─ MainPanel.tsx
 │     │  │  └─ SaveModal.tsx
 │     │  ├─ types.ts       # TypeScript types for UI
-│     │  ├─ index.css      # Global styles
+│     │  ├─ index.css      # Tailwind CSS imports and custom styles
 │     │  └─ vite-env.d.ts  # Vite type declarations
 │     └─ tsconfig.json     # TypeScript config for UI
+├─ scripts/                 # Utility scripts
+│  └─ postinstall-electron.js  # Electron auto-install script
+├─ tailwind.config.ts      # Tailwind CSS configuration
+├─ postcss.config.js       # PostCSS configuration
 ├─ src/                    # Shared core library
 │  ├─ core/                # Core business logic
 │  │  ├─ kscreen.ts        # DBus KScreen integration
@@ -564,13 +575,25 @@ import Header from "./components/Header";
   
   // ❌ Bad: Mixing high and low level
   async function applyProfile(name: string) {
+#### 7. **UI/UX Best Practices**
+
+**MUST follow these patterns:**
+
+- **Responsive Design**: Mobile-first approach with Tailwind breakpoints
+- **Loading States**: Always show feedback during async operations
+- **Error States**: Provide clear error messages and recovery options
+- **Accessibility**: Use semantic HTML, ARIA labels, keyboard navigation, proper color contrast
+- **Visual Hierarchy**: Primary/secondary actions, destructive warnings, icon reinforcement
+- **Feedback**: Hover states, visual confirmations, subtle animations, status indicators
+
+
     const bus = MessageBus.sessionBus(); // Too low-level
     await bus.connect();
     // ...
   }
   ```
 
-#### 7. **Naming Conventions**
+#### 8. **Naming Conventions**
 
 - **Descriptive names**: Function names should describe what they do
   ```typescript
@@ -586,7 +609,7 @@ import Header from "./components/Header";
 - **Interfaces**: PascalCase, descriptive
 - **Private functions**: Prefix with underscore `_` if needed for clarity
 
-#### 8. **Performance**
+#### 9. **Performance**
 
 - **Avoid premature optimization**: Profile first, optimize where needed
 - **Batch operations**: Group I/O operations when possible
@@ -594,7 +617,7 @@ import Header from "./components/Header";
 - **Cache appropriately**: Cache expensive operations, invalidate when needed
 - **Debounce/throttle**: For frequent UI operations
 
-#### 9. **Security**
+#### 10. **Security**
 
 - **Input sanitization**: Never trust user input
 - **Path validation**: Prevent directory traversal
@@ -612,7 +635,7 @@ import Header from "./components/Header";
   - ✅ `nodeIntegration: false`
   - ✅ `webSecurity: true`
 
-#### 10. **Testing**
+#### 11. **Testing**
 
 - **Test coverage**: Aim for >80% coverage on core logic
 - **Test types**: Unit tests, integration tests, E2E tests
@@ -620,7 +643,7 @@ import Header from "./components/Header";
 - **Mock external dependencies**: DBus, file system, Electron APIs
 - **Test error paths**: Verify error handling works correctly
 
-#### 11. **Magic Numbers & Constants**
+#### 12. **Magic Numbers & Constants**
 
 **MUST extract:**
 
@@ -641,7 +664,7 @@ import Header from "./components/Header";
   const PROFILES_FILE_NAME = "profiles.json";
   ```
 
-#### 12. **Logging**
+#### 13. **Logging**
 
 - **Use structured logging**: Include context, timestamps, levels
   ```typescript
@@ -652,7 +675,7 @@ import Header from "./components/Header";
 - **Don't log sensitive data**: Profiles, user data, tokens
 - **Production logging**: Less verbose in production
 
-#### 13. **Documentation**
+#### 14. **Documentation**
 
 - **JSDoc for public APIs**: Document all exported functions
   ```typescript
@@ -773,6 +796,11 @@ In production:
   import dbusNext from "dbus-next";
   const { MessageBus } = dbusNext;
   ```
+- **Tailwind CSS version**: The project uses Tailwind CSS v3.4.x (not v4.x). Version 4.x has a different configuration API:
+  - ✅ **Current setup**: Tailwind CSS v3.4.18 with traditional `@tailwind` directives
+  - ❌ **Version 4.x**: Uses CSS imports instead of `@tailwind` directives
+  - **If you need v4**: Follow the official v4 migration guide - the configuration is completely different
+  
 - **Electron installation error (path.txt missing)**: If you get "Electron failed to install correctly" or "path.txt is missing":
   
   **The Problem**: The Electron `postinstall` script may fail silently (especially with pnpm or slow networks), preventing the `path.txt` file from being created. This file tells Electron where to find its binary.

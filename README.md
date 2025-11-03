@@ -36,6 +36,8 @@ Since tools like `autorandr` don't work on Wayland (X11 only), Monprof provides:
 - **App Shell**: Electron
 - **Backend**: Node.js (TypeScript) with `dbus-next`
 - **UI**: React with Vite
+- **Styling**: Tailwind CSS with Catppuccin color palette
+- **Icons**: Lucide React
 - **Config Store**: Local JSON file (`profiles.json`)
 
 ## Installation

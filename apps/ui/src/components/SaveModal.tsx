@@ -1,3 +1,4 @@
+import { Monitor, Save, X } from "lucide-react";
 import { useState } from "react";
 
 interface SaveModalProps {
@@ -11,88 +12,101 @@ function SaveModal({ onClose, onSave, existingNames }: SaveModalProps) {
   const [error, setError] = useState("");
 
   const handleSave = () => {
-    if (!profileName.trim()) {
+    const trimmed = profileName.trim();
+
+    if (!trimmed) {
       setError("Profile name is required");
       return;
     }
 
-    if (existingNames.includes(profileName.trim())) {
+    if (existingNames.includes(trimmed)) {
       setError("A profile with this name already exists");
       return;
     }
 
-    onSave(profileName.trim());
+    onSave(trimmed);
   };
 
   return (
     <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        style={{
-          background: "var(--bg-secondary)",
-          padding: "2rem",
-          borderRadius: "8px",
-          border: "1px solid var(--border)",
-          minWidth: "400px",
-          maxWidth: "90%",
-        }}
+        className="bg-catppuccin-mantle border border-catppuccin-surface1 rounded-xl shadow-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginBottom: "1.5rem", fontSize: "1.25rem" }}>Save Current Layout</h2>
-
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="profile-name-input"
-            style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}
-          >
-            Profile Name
-          </label>
-          <input
-            id="profile-name-input"
-            type="text"
-            value={profileName}
-            onChange={(e) => {
-              setProfileName(e.target.value);
-              setError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSave();
-              }
-            }}
-            placeholder="e.g., professional, gaming"
-            style={{ width: "100%" }}
-          />
-          {error && (
-            <p style={{ color: "var(--error)", fontSize: "0.85rem", marginTop: "0.5rem" }}>
-              {error}
-            </p>
-          )}
-        </div>
-
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-catppuccin-surface1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-catppuccin-blue/20 rounded-lg flex items-center justify-center">
+              <Monitor className="w-5 h-5 text-catppuccin-blue" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-catppuccin-text">Save Current Layout</h2>
+              <p className="text-xs text-catppuccin-overlay">Create a new profile</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-primary)" }}
+            className="p-2 hover:bg-catppuccin-surface0 rounded-lg transition-colors"
+            aria-label="Close"
           >
+            <X className="w-5 h-5 text-catppuccin-subtext" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <div>
+            <label
+              htmlFor="profile-name-input"
+              className="block text-sm font-medium text-catppuccin-subtext mb-2"
+            >
+              Profile Name
+            </label>
+            <input
+              id="profile-name-input"
+              type="text"
+              value={profileName}
+              onChange={(e) => {
+                setProfileName(e.target.value);
+                setError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSave();
+                }
+              }}
+              placeholder="e.g., professional, gaming, home-office"
+              className="input"
+            />
+            {error && (
+              <p className="text-sm text-catppuccin-red mt-2 flex items-center gap-1">
+                <span className="w-4 h-4 flex items-center justify-center">!</span>
+                {error}
+              </p>
+            )}
+            <p className="text-xs text-catppuccin-overlay mt-2">
+              This will save your current display configuration as a new profile
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-catppuccin-surface1">
+          <button type="button" onClick={onClose} className="btn btn-secondary">
             Cancel
           </button>
-          <button type="button" onClick={handleSave}>
-            Save
+          <button
+            type="button"
+            onClick={handleSave}
+            className="btn btn-primary flex items-center gap-2"
+            disabled={!profileName.trim()}
+          >
+            <Save className="w-4 h-4" />
+            <span>Save Profile</span>
           </button>
         </div>
       </div>

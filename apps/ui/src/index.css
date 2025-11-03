@@ -1,100 +1,214 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  * {
-    @apply border-catppuccin-surface1;
-  }
-
-  body {
-    @apply bg-catppuccin-base text-catppuccin-text font-sans antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-      "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-  }
-
-  #root {
-    @apply h-screen flex flex-col overflow-hidden;
-  }
+@theme {
+  --color-catppuccin-base: #1e1e2e;
+  --color-catppuccin-mantle: #181825;
+  --color-catppuccin-crust: #11111b;
+  --color-catppuccin-surface0: #313244;
+  --color-catppuccin-surface1: #45475a;
+  --color-catppuccin-surface2: #585b70;
+  --color-catppuccin-text: #cdd6f4;
+  --color-catppuccin-subtext: #bac2de;
+  --color-catppuccin-overlay: #6c7086;
+  --color-catppuccin-blue: #89b4fa;
+  --color-catppuccin-lavender: #b4befe;
+  --color-catppuccin-sapphire: #74c7ec;
+  --color-catppuccin-sky: #89dceb;
+  --color-catppuccin-teal: #94e2d5;
+  --color-catppuccin-green: #a6e3a1;
+  --color-catppuccin-yellow: #f9e2af;
+  --color-catppuccin-peach: #fab387;
+  --color-catppuccin-maroon: #eba0ac;
+  --color-catppuccin-red: #f38ba8;
+  --color-catppuccin-mauve: #cba6f7;
+  --color-catppuccin-pink: #f5c2e7;
+  --color-catppuccin-flamingo: #f2cdcd;
+  --color-catppuccin-rosewater: #f5e0dc;
 }
 
-@layer components {
-  .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-catppuccin-base;
-  }
+* {
+  border-color: var(--color-catppuccin-surface1);
+}
 
-  .btn-primary {
-    @apply bg-catppuccin-blue text-catppuccin-crust;
-    @apply hover:bg-catppuccin-sapphire focus:ring-catppuccin-blue;
-    @apply active:scale-95;
-  }
+body {
+  background-color: var(--color-catppuccin-base);
+  color: var(--color-catppuccin-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-  .btn-secondary {
-    @apply bg-catppuccin-surface0 text-catppuccin-text;
-    @apply hover:bg-catppuccin-surface1 focus:ring-catppuccin-surface1;
-    @apply active:scale-95;
-  }
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  .btn-danger {
-    @apply bg-catppuccin-red text-white;
-    @apply hover:bg-catppuccin-maroon focus:ring-catppuccin-red;
-    @apply active:scale-95;
-  }
+/* Component classes */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
 
-  .btn-success {
-    @apply bg-catppuccin-green text-catppuccin-crust;
-    @apply hover:bg-catppuccin-teal focus:ring-catppuccin-green;
-    @apply active:scale-95;
-  }
+.btn-primary {
+  background-color: var(--color-catppuccin-blue);
+  color: var(--color-catppuccin-crust);
+}
 
-  .btn:disabled {
-    @apply opacity-50 cursor-not-allowed active:scale-100;
-  }
+.btn-primary:hover {
+  background-color: var(--color-catppuccin-sapphire);
+}
 
-  .input {
-    @apply w-full px-3 py-2 bg-catppuccin-surface0 border border-catppuccin-surface1;
-    @apply rounded-lg text-catppuccin-text placeholder-catppuccin-overlay;
-    @apply focus:outline-none focus:ring-2 focus:ring-catppuccin-blue focus:border-transparent;
-    @apply transition-all duration-200;
-  }
+.btn-primary:focus {
+  --tw-ring-color: var(--color-catppuccin-blue);
+}
 
-  .select {
-    @apply input cursor-pointer;
-  }
+.btn-primary:active {
+  transform: scale(0.95);
+}
 
-  .card {
-    @apply bg-catppuccin-surface0 border border-catppuccin-surface1 rounded-xl p-6;
-    @apply transition-all duration-200;
-  }
+.btn-secondary {
+  background-color: var(--color-catppuccin-surface0);
+  color: var(--color-catppuccin-text);
+}
 
-  .card-hover {
-    @apply hover:border-catppuccin-blue hover:shadow-lg hover:shadow-catppuccin-blue/10;
-  }
+.btn-secondary:hover {
+  background-color: var(--color-catppuccin-surface1);
+}
 
-  .badge {
-    @apply px-2 py-1 rounded-md text-xs font-medium;
-  }
+.btn-secondary:focus {
+  --tw-ring-color: var(--color-catppuccin-surface1);
+}
 
-  .badge-primary {
-    @apply bg-catppuccin-blue/20 text-catppuccin-blue border border-catppuccin-blue/30;
-  }
+.btn-secondary:active {
+  transform: scale(0.95);
+}
 
-  .badge-success {
-    @apply bg-catppuccin-green/20 text-catppuccin-green border border-catppuccin-green/30;
-  }
+.btn-danger {
+  background-color: var(--color-catppuccin-red);
+  color: white;
+}
 
-  .badge-warning {
-    @apply bg-catppuccin-yellow/20 text-catppuccin-yellow border border-catppuccin-yellow/30;
-  }
+.btn-danger:hover {
+  background-color: var(--color-catppuccin-maroon);
+}
 
-  .tooltip {
-    @apply absolute z-50 px-2 py-1 text-xs bg-catppuccin-crust text-catppuccin-text;
-    @apply rounded-md shadow-lg border border-catppuccin-surface1;
-    @apply opacity-0 pointer-events-none transition-opacity duration-200;
-  }
+.btn-danger:focus {
+  --tw-ring-color: var(--color-catppuccin-red);
+}
 
-  .tooltip-visible {
-    @apply opacity-100 pointer-events-auto;
-  }
+.btn-danger:active {
+  transform: scale(0.95);
+}
+
+.btn-success {
+  background-color: var(--color-catppuccin-green);
+  color: var(--color-catppuccin-crust);
+}
+
+.btn-success:hover {
+  background-color: var(--color-catppuccin-teal);
+}
+
+.btn-success:focus {
+  --tw-ring-color: var(--color-catppuccin-green);
+}
+
+.btn-success:active {
+  transform: scale(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:active {
+  transform: scale(1);
+}
+
+.input {
+  @apply w-full px-3 py-2 rounded-lg transition-all duration-200;
+  background-color: var(--color-catppuccin-surface0);
+  border: 1px solid var(--color-catppuccin-surface1);
+  color: var(--color-catppuccin-text);
+}
+
+.input::placeholder {
+  color: var(--color-catppuccin-overlay);
+}
+
+.input:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-catppuccin-blue);
+}
+
+.select {
+  @apply cursor-pointer;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-catppuccin-surface0);
+  border: 1px solid var(--color-catppuccin-surface1);
+  border-radius: 0.5rem;
+  color: var(--color-catppuccin-text);
+  transition: all 0.2s;
+}
+
+.select::placeholder {
+  color: var(--color-catppuccin-overlay);
+}
+
+.select:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--color-catppuccin-blue);
+}
+
+.card {
+  @apply rounded-xl p-6 transition-all duration-200;
+  background-color: var(--color-catppuccin-surface0);
+  border: 1px solid var(--color-catppuccin-surface1);
+}
+
+.card-hover:hover {
+  border-color: var(--color-catppuccin-blue);
+  box-shadow: 0 10px 15px -3px rgba(137, 180, 250, 0.1);
+}
+
+.badge {
+  @apply px-2 py-1 rounded-md text-xs font-medium;
+}
+
+.badge-primary {
+  background-color: rgba(137, 180, 250, 0.2);
+  color: var(--color-catppuccin-blue);
+  border: 1px solid rgba(137, 180, 250, 0.3);
+}
+
+.badge-success {
+  background-color: rgba(166, 227, 161, 0.2);
+  color: var(--color-catppuccin-green);
+  border: 1px solid rgba(166, 227, 161, 0.3);
+}
+
+.badge-warning {
+  background-color: rgba(249, 226, 175, 0.2);
+  color: var(--color-catppuccin-yellow);
+  border: 1px solid rgba(249, 226, 175, 0.3);
+}
+
+.tooltip {
+  @apply absolute z-50 px-2 py-1 text-xs rounded-md shadow-lg;
+  @apply opacity-0 pointer-events-none transition-opacity duration-200;
+  background-color: var(--color-catppuccin-crust);
+  color: var(--color-catppuccin-text);
+  border: 1px solid var(--color-catppuccin-surface1);
+}
+
+.tooltip-visible {
+  opacity: 1;
+  pointer-events: auto;
 }

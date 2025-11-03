@@ -796,10 +796,11 @@ In production:
   import dbusNext from "dbus-next";
   const { MessageBus } = dbusNext;
   ```
-- **Tailwind CSS version**: The project uses Tailwind CSS v3.4.x (not v4.x). Version 4.x has a different configuration API:
-  - ✅ **Current setup**: Tailwind CSS v3.4.18 with traditional `@tailwind` directives
-  - ❌ **Version 4.x**: Uses CSS imports instead of `@tailwind` directives
-  - **If you need v4**: Follow the official v4 migration guide - the configuration is completely different
+- **Tailwind CSS version**: The project uses Tailwind CSS v4.x with the new CSS-first configuration:
+  - ✅ **Current setup**: Tailwind CSS v4.1.16 with `@import "tailwindcss"` and `@theme` directive
+  - ✅ **Configuration**: Colors defined in `@theme` block using CSS variables
+  - ✅ **PostCSS**: Uses `@tailwindcss/postcss` plugin (autoprefixer included automatically)
+  - ✅ **No config file**: `tailwind.config.ts` removed - configuration is now in CSS
   
 - **Electron installation error (path.txt missing)**: If you get "Electron failed to install correctly" or "path.txt is missing":
   

@@ -117,6 +117,20 @@ monprof/
 - DO NOT create additional .md files (only README.md and PROJECT.md)
 - Comments: Only for complex logic, workarounds, or public API docs
 
+**Type Safety:**
+- **NEVER use `biome-ignore` for type safety issues** - always define proper types
+- When working with libraries without TypeScript types (like `dbus-next`):
+  1. Create type definitions in `src/@types/` directory (e.g., `kscreen.d.ts`)
+  2. Define interfaces/types that match the actual API
+  3. Use these types throughout the codebase instead of `any`
+  4. Document the types with JSDoc comments explaining their purpose
+- For CommonJS modules used in ESM context:
+  - Use `createRequire(import.meta.url)` to import
+  - Create type definitions that describe the runtime structure
+  - Use type assertions (`as`) only when the type is known from runtime checks
+- Prefer `const` over `let` when variables are not reassigned
+- Use specific types instead of generic `unknown` when the structure is known
+
 **PR Requirements:**
 - Description
 - Screenshots (UI changes)
@@ -153,6 +167,9 @@ monprof/
   - Mode IDs and mode properties also need unwrapping
   - Position uses `pos` key, not `position`
   - Booleans may come as numbers (1/0) or BigInt - convert appropriately
+  - **Type Safety**: Define proper types for DBus entities (MessageBus, Variant, Interface) in `src/types/kscreen.d.ts`
+  - **Never use `any` or `biome-ignore`** - always create proper type definitions
+  - When calling `setConfig`, wrap all values in `Variant` instances (DBus requirement)
 - **Primary Display**: KScreen uses `priority` field (lower = primary), not a boolean `primary` field
   - Primary display has `priority: 1`, others have `priority: 2, 3, 4, ...`
   - Our code converts `priority` to `primary: true/false` for easier use

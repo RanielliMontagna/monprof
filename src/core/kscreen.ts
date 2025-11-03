@@ -7,14 +7,51 @@
 // We need to handle this properly in ESM context using createRequire
 import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
-// biome-ignore lint/suspicious/noExplicitAny: dbus-next doesn't export proper types
-let sessionBusFn: ((...args: unknown[]) => any) | null = null;
+// Type definitions for dbus-next
+// Since @types/dbus-next doesn't exist, we define types here
+// These types match the actual dbus-next API
+interface DBusVariant {
+  signature: string;
+  value: unknown;
+  constructor: new (signature: string, value: unknown) => DBusVariant;
+}
 
-async function getSessionBus() {
+interface DBusMessageBus {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  getProxyObject(service: string, path: string): Promise<DBusProxyObject>;
+}
+
+interface DBusProxyObject {
+  getInterface(name: string): DBusInterface;
+}
+
+interface DBusInterface {
+  getConfig(): Promise<unknown>;
+  setConfig(config: Record<string, unknown>): Promise<void>;
+  requestBackend(name: string, options: Record<string, unknown>): Promise<void>;
+  [key: string]: ((...args: unknown[]) => Promise<unknown>) | unknown;
+}
+
+const require = createRequire(import.meta.url);
+
+// Lazy-load dbus-next types at runtime (CommonJS module)
+type DBusNextModule = {
+  sessionBus: () => DBusMessageBus;
+  Variant: new (signature: string, value: unknown) => DBusVariant;
+};
+
+let sessionBusFn: (() => DBusMessageBus) | null = null;
+let VariantClass: (new (signature: string, value: unknown) => DBusVariant) | null = null;
+
+/**
+ * Get a connected session bus for DBus communication
+ * Returns already connected bus - do NOT call connect()
+ */
+async function getSessionBus(): Promise<DBusMessageBus> {
   if (!sessionBusFn) {
     // Import dbus-next - it exports sessionBus as a function directly
-    const dbusNext = require("dbus-next");
+    const dbusNext = require("dbus-next") as DBusNextModule;
     sessionBusFn = dbusNext.sessionBus;
     if (!sessionBusFn || typeof sessionBusFn !== "function") {
       throw new Error("dbus-next: sessionBus not found or is not a function");
@@ -23,9 +60,21 @@ async function getSessionBus() {
   return sessionBusFn();
 }
 
-// Type definition for Interface (dbus-next doesn't export types properly)
-// biome-ignore lint/suspicious/noExplicitAny: dbus-next doesn't export proper types
-type Interface = any;
+/**
+ * Get the Variant class from dbus-next
+ * Used to wrap values in DBus Variants for method calls
+ */
+function getVariant(): new (signature: string, value: unknown) => DBusVariant {
+  if (!VariantClass) {
+    // Import Variant from dbus-next
+    const dbusNext = require("dbus-next") as DBusNextModule;
+    VariantClass = dbusNext.Variant;
+    if (!VariantClass) {
+      throw new Error("dbus-next: Variant class not found");
+    }
+  }
+  return VariantClass;
+}
 
 const KSCREEN_SERVICE = "org.kde.KScreen";
 const KSCREEN_INTERFACE_MAIN = "org.kde.KScreen";
@@ -56,12 +105,11 @@ interface KScreenRawConfig {
 /**
  * Ensure backend is available and return the backend path
  */
-// biome-ignore lint/suspicious/noExplicitAny: dbus-next MessageBus type not properly exported
-async function ensureBackend(bus: any): Promise<string> {
+async function ensureBackend(bus: DBusMessageBus): Promise<string> {
   try {
     // First, try to ensure backend is requested
     const mainProxy = await bus.getProxyObject(KSCREEN_SERVICE, "/");
-    const mainInterface = mainProxy.getInterface(KSCREEN_INTERFACE_MAIN) as Interface;
+    const mainInterface = mainProxy.getInterface(KSCREEN_INTERFACE_MAIN) as DBusInterface;
 
     // Request backend if needed (this might be necessary on first use)
     try {
@@ -148,7 +196,12 @@ function parseMode(output: Record<string, unknown>): string | undefined {
       const height = unwrapVariant(size.height);
       if (typeof width === "number" && typeof height === "number") {
         const refreshRaw = unwrapVariant(mode.refreshRate || mode.refresh);
-        const refresh = typeof refreshRaw === "number" ? refreshRaw : typeof refreshRaw === "bigint" ? Number(refreshRaw) : 60;
+        const refresh =
+          typeof refreshRaw === "number"
+            ? refreshRaw
+            : typeof refreshRaw === "bigint"
+              ? Number(refreshRaw)
+              : 60;
         return `${width}x${height}@${refresh}`;
       }
     }
@@ -158,23 +211,39 @@ function parseMode(output: Record<string, unknown>): string | undefined {
   const currentModeId = unwrapVariant(output.currentModeId);
   const modesRaw = unwrapVariant(output.modes);
   if (currentModeId !== undefined && currentModeId !== null && modesRaw) {
-    const modes = (Array.isArray(modesRaw) ? modesRaw : Object.values(modesRaw)) as Array<Record<string, unknown>>;
+    const modes = (Array.isArray(modesRaw) ? modesRaw : Object.values(modesRaw)) as Array<
+      Record<string, unknown>
+    >;
     // currentModeId might be a string or number, normalize for comparison
     const currentModeIdStr = String(currentModeId);
-    const currentModeIdNum = typeof currentModeId === "number" ? currentModeId : typeof currentModeId === "bigint" ? Number(currentModeId) : null;
-    
+    const currentModeIdNum =
+      typeof currentModeId === "number"
+        ? currentModeId
+        : typeof currentModeId === "bigint"
+          ? Number(currentModeId)
+          : null;
+
     const mode = modes.find((m) => {
       // Unwrap the entire mode object first, then get id
-      const unwrappedMode = typeof m === "object" && m !== null && !Array.isArray(m) && "value" in m 
-        ? (m as Record<string, unknown>).value 
-        : m;
+      const unwrappedMode =
+        typeof m === "object" && m !== null && !Array.isArray(m) && "value" in m
+          ? (m as Record<string, unknown>).value
+          : m;
       const modeObj = unwrappedMode as Record<string, unknown>;
       const modeId = unwrapVariant(modeObj.id);
       // Try both string and number comparison
       if (String(modeId) === currentModeIdStr) return true;
       if (currentModeIdNum !== null) {
-        const modeIdNum = typeof modeId === "number" ? modeId : typeof modeId === "bigint" ? Number(modeId) : typeof modeId === "string" ? Number.parseInt(modeId, 10) : null;
-        if (modeIdNum !== null && !Number.isNaN(modeIdNum) && modeIdNum === currentModeIdNum) return true;
+        const modeIdNum =
+          typeof modeId === "number"
+            ? modeId
+            : typeof modeId === "bigint"
+              ? Number(modeId)
+              : typeof modeId === "string"
+                ? Number.parseInt(modeId, 10)
+                : null;
+        if (modeIdNum !== null && !Number.isNaN(modeIdNum) && modeIdNum === currentModeIdNum)
+          return true;
       }
       return false;
     });
@@ -185,7 +254,7 @@ function parseMode(output: Record<string, unknown>): string | undefined {
         unwrappedModeObj = (mode as Record<string, unknown>).value as Record<string, unknown>;
       }
       const modeObj = unwrappedModeObj as Record<string, unknown>;
-      
+
       // Unwrap mode properties
       const modeName = unwrapVariant(modeObj.name);
       if (modeName && typeof modeName === "string") {
@@ -199,7 +268,12 @@ function parseMode(output: Record<string, unknown>): string | undefined {
         const height = unwrapVariant(size.height);
         if (typeof width === "number" && typeof height === "number") {
           const refreshRaw = unwrapVariant(modeObj.refreshRate || modeObj.refresh);
-          const refresh = typeof refreshRaw === "number" ? refreshRaw : typeof refreshRaw === "bigint" ? Number(refreshRaw) : 60;
+          const refresh =
+            typeof refreshRaw === "number"
+              ? refreshRaw
+              : typeof refreshRaw === "bigint"
+                ? Number(refreshRaw)
+                : 60;
           return `${width}x${height}@${refresh}`;
         }
       }
@@ -221,7 +295,7 @@ export async function getConfig(): Promise<KScreenConfig> {
     const backendPath = await ensureBackend(bus);
 
     const proxy = await bus.getProxyObject(KSCREEN_SERVICE, backendPath);
-    const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as Interface;
+    const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as DBusInterface;
     const result = await backend.getConfig();
 
     // dbus-next wraps DBus variants in objects with 'signature' and 'value' properties
@@ -229,7 +303,11 @@ export async function getConfig(): Promise<KScreenConfig> {
     if (typeof result === "object" && result !== null) {
       const resultObj = result as Record<string, unknown>;
       // Unwrap variant if present (has 'value' and 'signature' properties)
-      if (resultObj.outputs && typeof resultObj.outputs === "object" && !Array.isArray(resultObj.outputs)) {
+      if (
+        resultObj.outputs &&
+        typeof resultObj.outputs === "object" &&
+        !Array.isArray(resultObj.outputs)
+      ) {
         const outputsVariant = resultObj.outputs as Record<string, unknown>;
         if ("value" in outputsVariant) {
           resultObj.outputs = outputsVariant.value;
@@ -256,10 +334,14 @@ export async function setConfig(config: KScreenConfig): Promise<void> {
     const backendPath = await ensureBackend(bus);
 
     const proxy = await bus.getProxyObject(KSCREEN_SERVICE, backendPath);
-    const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as Interface;
+    const backend = proxy.getInterface(KSCREEN_INTERFACE_BACKEND) as DBusInterface;
     const kscreenConfig = denormalizeConfig(config);
 
-    await backend.setConfig(kscreenConfig);
+    // Wrap config with Variants before sending to DBus
+    // DBus requires Variants for values in maps
+    const variantConfig = wrapConfigWithVariants(kscreenConfig);
+
+    await backend.setConfig(variantConfig);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to set KScreen config: ${errorMessage}`);
@@ -280,16 +362,20 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
   // dbus-next may wrap outputs in a variant or return as object/dict
   // Handle all cases
   let outputsArray: Array<Record<string, unknown>>;
-  
+
   // First, unwrap variant if present
   let unwrappedOutputs: unknown = kscreenConfig.outputs;
-  if (typeof unwrappedOutputs === "object" && unwrappedOutputs !== null && !Array.isArray(unwrappedOutputs)) {
+  if (
+    typeof unwrappedOutputs === "object" &&
+    unwrappedOutputs !== null &&
+    !Array.isArray(unwrappedOutputs)
+  ) {
     const outputsObj = unwrappedOutputs as Record<string, unknown>;
     if ("value" in outputsObj) {
       unwrappedOutputs = outputsObj.value;
     }
   }
-  
+
   if (Array.isArray(unwrappedOutputs)) {
     outputsArray = unwrappedOutputs as Array<Record<string, unknown>>;
   } else if (typeof unwrappedOutputs === "object" && unwrappedOutputs !== null) {
@@ -306,10 +392,10 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
   let primaryOutputIndex = -1;
   let lowestPriority: number | null = null;
   let hasExplicitPrimary = false;
-  
+
   for (let i = 0; i < outputsArray.length; i++) {
-    let outputRaw = outputsArray[i];
-    
+    const outputRaw = outputsArray[i];
+
     // Unwrap variant if needed
     let unwrapped: unknown = outputRaw;
     while (typeof unwrapped === "object" && unwrapped !== null && !Array.isArray(unwrapped)) {
@@ -321,13 +407,13 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
       }
     }
     const output = unwrapped as Record<string, unknown>;
-    
+
     // Unwrap all variant values
     const unwrappedOutput: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(output)) {
       unwrappedOutput[key] = unwrapVariant(val);
     }
-    
+
     // Check if enabled
     let enabled = unwrappedOutput.enabled ?? unwrappedOutput.connected ?? false;
     if (typeof enabled === "number") {
@@ -335,7 +421,7 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
     } else if (typeof enabled === "bigint") {
       enabled = enabled === BigInt(1);
     }
-    
+
     // Check for explicit primary flag (for test data compatibility)
     const explicitPrimary = unwrappedOutput.primary;
     if (enabled && explicitPrimary === true) {
@@ -344,7 +430,14 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
     } else if (enabled && unwrappedOutput.priority !== undefined && !hasExplicitPrimary) {
       // Only use priority if no explicit primary was found
       const priority = unwrappedOutput.priority;
-      const priorityNum = typeof priority === "number" ? priority : typeof priority === "bigint" ? Number(priority) : typeof priority === "string" ? Number.parseInt(priority, 10) : null;
+      const priorityNum =
+        typeof priority === "number"
+          ? priority
+          : typeof priority === "bigint"
+            ? Number(priority)
+            : typeof priority === "string"
+              ? Number.parseInt(priority, 10)
+              : null;
       if (priorityNum !== null && !Number.isNaN(priorityNum)) {
         if (lowestPriority === null || priorityNum < lowestPriority) {
           lowestPriority = priorityNum;
@@ -353,11 +446,10 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
       }
     }
   }
-  
 
   for (let i = 0; i < outputsArray.length; i++) {
-    let outputRaw = outputsArray[i];
-    
+    const outputRaw = outputsArray[i];
+
     // Each output might also be wrapped in a variant - unwrap recursively
     let unwrapped: unknown = outputRaw;
     while (typeof unwrapped === "object" && unwrapped !== null && !Array.isArray(unwrapped)) {
@@ -371,13 +463,13 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
       }
     }
     const output = unwrapped as Record<string, unknown>;
-    
+
     // Unwrap all variant values in the output object
     const unwrappedOutput: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(output)) {
       unwrappedOutput[key] = unwrapVariant(val);
     }
-    
+
     // Get name - required field
     const outputName = unwrappedOutput.name;
     if (!outputName || typeof outputName !== "string") {
@@ -448,7 +540,7 @@ export function normalizeConfig(kscreenConfig: KScreenRawConfig): KScreenConfig 
 }
 
 /**
- * Convert our internal format to KScreen config format
+ * Convert our internal format to KScreen config format (plain objects)
  * Exported for testing purposes
  */
 export function denormalizeConfig(config: KScreenConfig): Record<string, unknown> {
@@ -506,4 +598,89 @@ export function denormalizeConfig(config: KScreenConfig): Record<string, unknown
   });
 
   return { outputs };
+}
+
+/**
+ * Convert denormalized config to DBus Variant format
+ * KScreen expects a{sv} (map with string keys and variant values)
+ * Each property in the output must be wrapped in a Variant
+ * The config should be a map where "outputs" is a Variant containing an array of variant maps
+ */
+function wrapConfigWithVariants(config: Record<string, unknown>): Record<string, unknown> {
+  const VariantClass = getVariant();
+
+  const outputs = config.outputs as Array<Record<string, unknown>>;
+  if (!Array.isArray(outputs)) {
+    throw new Error("Invalid config: outputs must be an array");
+  }
+
+  // Convert each output to use Variants
+  // Each output is a map {sv} (string keys, Variant values)
+  const variantOutputs: Array<Record<string, DBusVariant>> = outputs.map((output) => {
+    const variantOutput: Record<string, DBusVariant> = {};
+
+    // Wrap each property in a Variant
+    if (typeof output.name === "string") {
+      variantOutput.name = new VariantClass("s", output.name); // String
+    }
+
+    if (typeof output.enabled === "boolean") {
+      variantOutput.enabled = new VariantClass("b", output.enabled); // Boolean
+    }
+
+    if (typeof output.priority === "number") {
+      variantOutput.priority = new VariantClass("i", output.priority); // Integer
+    }
+
+    if (typeof output.rotation === "number") {
+      variantOutput.rotation = new VariantClass("i", output.rotation); // Integer
+    }
+
+    if (output.position && typeof output.position === "object" && !Array.isArray(output.position)) {
+      const pos = output.position as { x?: unknown; y?: unknown };
+      if (typeof pos.x === "number" && typeof pos.y === "number") {
+        // Position is a struct (ii) - two integers
+        variantOutput.position = new VariantClass("(ii)", [pos.x, pos.y]);
+      }
+    }
+
+    if (typeof output.currentModeId === "string") {
+      variantOutput.currentModeId = new VariantClass("s", output.currentModeId); // String
+    }
+
+    if (
+      output.currentMode &&
+      typeof output.currentMode === "object" &&
+      !Array.isArray(output.currentMode)
+    ) {
+      const mode = output.currentMode as {
+        size?: { width?: number; height?: number };
+        refresh?: number;
+      };
+      if (
+        mode.size &&
+        typeof mode.size.width === "number" &&
+        typeof mode.size.height === "number" &&
+        typeof mode.refresh === "number"
+      ) {
+        // Mode is a struct with size (itself a struct) and refresh rate
+        // Size struct: (ii) - two integers
+        // Mode struct: ((ii)i) - size struct (ii) followed by refresh integer
+        variantOutput.currentMode = new VariantClass("((ii)i)", [
+          [mode.size.width, mode.size.height],
+          mode.refresh,
+        ]);
+      }
+    }
+
+    return variantOutput;
+  });
+
+  // Wrap the entire outputs array in a Variant
+  // Outputs is an array of variant maps: a{sv} (array of maps with string keys and Variant values)
+  // Then wrap that Variant in a map with key "outputs"
+  const outputsArrayVariant = new VariantClass("a{sv}", variantOutputs);
+
+  // Return a map {sv} with "outputs" as key and the Variant as value
+  return { outputs: outputsArrayVariant };
 }

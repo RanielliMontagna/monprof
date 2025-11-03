@@ -39,7 +39,8 @@ Both CLI and GUI use the same core library.
 ## DBus Integration
 
 - **Service**: `org.kde.KScreen`
-- **Path**: `/backend`
+- **Path**: `/backend` (may need to call `requestBackend()` first)
+- **Interface**: `org.kde.kscreen.Backend` (note: lowercase 'kscreen')
 - **Methods**: `getConfig`, `setConfig`
 
 ---
@@ -140,7 +141,12 @@ monprof/
 **Common Issues:**
 - `ERR_CONNECTION_REFUSED`: Start Vite before Electron, or use `npm run dev`
 - Preload errors: Preload must be CommonJS (compiled separately)
-- CommonJS imports: Use default import for `dbus-next`
+- `dbus-next` import: Use `createRequire(import.meta.url)` to import CommonJS module in ESM
+  - `dbus-next` exports `sessionBus` and `systemBus` as functions, not a `MessageBus` class
+  - In ESM modules, use `createRequire` from `node:module` to access `require()`
+  - **Important**: `sessionBus()` returns an already connected bus - do NOT call `connect()` or `disconnect()`
+- **KScreen Backend Path**: Always use `/backend` path (call `requestBackend()` first if needed)
+- **Interface name**: Use `org.kde.kscreen.Backend` (lowercase 'kscreen'), not `org.kde.KScreen.Backend`
 
 ---
 
@@ -151,3 +157,14 @@ monprof/
 - ✅ Electron GUI
 - ✅ React UI
 - ✅ System tray implementation
+
+## Future Enhancements (Optional)
+
+- Add custom tray icon in `assets/icon.png`
+- Add visual feedback when applying profile (toast/notification)
+- Add keyboard shortcut to show/hide window
+- Profile duplication feature
+- Profile deletion with confirmation
+- Import/export profiles.json
+- Display detection refresh button
+- Keyboard shortcuts in UI (e.g., Ctrl+S to save)

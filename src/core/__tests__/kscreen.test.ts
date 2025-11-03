@@ -115,9 +115,11 @@ describe("KScreen Config Normalization", () => {
         ],
       };
 
-      const result = denormalize(config);
+      const result = denormalize(config) as {
+        outputs?: Array<Record<string, unknown>>;
+      };
       expect(result.outputs).toBeDefined();
-      if (result.outputs && result.outputs.length > 0 && result.outputs[0]) {
+      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
         expect(result.outputs[0]).toMatchObject({
           name: "DP-1",
           enabled: true,
@@ -125,8 +127,14 @@ describe("KScreen Config Normalization", () => {
           rotation: 0,
           position: { x: 0, y: 0 },
         });
-        expect(result.outputs[0].currentMode?.size).toEqual({ width: 2560, height: 1440 });
-        expect(result.outputs[0].currentMode?.refresh).toBe(60);
+        const output = result.outputs[0];
+        if (output && "currentMode" in output) {
+          const mode = (output as Record<string, unknown>).currentMode as
+            | { size?: { width?: number; height?: number }; refresh?: number }
+            | undefined;
+          expect(mode?.size).toEqual({ width: 2560, height: 1440 });
+          expect(mode?.refresh).toBe(60);
+        }
       }
     });
 
@@ -149,8 +157,8 @@ describe("KScreen Config Normalization", () => {
           ],
         };
 
-        const result = denormalize(config);
-        if (result.outputs && result.outputs.length > 0 && result.outputs[0]) {
+      const result = denormalize(config) as { outputs?: Array<Record<string, unknown>> };
+      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
           expect(result.outputs[0].rotation).toBe(expected);
         }
       }
@@ -167,10 +175,18 @@ describe("KScreen Config Normalization", () => {
         ],
       };
 
-      const result = denormalize(config as { outputs: DisplayOutput[] });
-      if (result.outputs && result.outputs.length > 0 && result.outputs[0]) {
-        expect(result.outputs[0].currentMode?.size).toEqual({ width: 1920, height: 1080 });
-        expect(result.outputs[0].currentMode?.refresh).toBe(120);
+      const result = denormalize(config as { outputs: DisplayOutput[] }) as {
+        outputs?: Array<Record<string, unknown>>;
+      };
+      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
+        const output = result.outputs[0];
+        if (output && "currentMode" in output) {
+          const mode = (output as Record<string, unknown>).currentMode as
+            | { size?: { width?: number; height?: number }; refresh?: number }
+            | undefined;
+          expect(mode?.size).toEqual({ width: 1920, height: 1080 });
+          expect(mode?.refresh).toBe(120);
+        }
       }
     });
 
@@ -184,8 +200,10 @@ describe("KScreen Config Normalization", () => {
         ],
       };
 
-      const result = denormalize(config as { outputs: DisplayOutput[] });
-      if (result.outputs && result.outputs.length > 0 && result.outputs[0]) {
+      const result = denormalize(config as { outputs: DisplayOutput[] }) as {
+        outputs?: Array<Record<string, unknown>>;
+      };
+      if (result.outputs && Array.isArray(result.outputs) && result.outputs.length > 0 && result.outputs[0]) {
         expect(result.outputs[0]).toMatchObject({
           name: "HDMI-1",
           enabled: false,

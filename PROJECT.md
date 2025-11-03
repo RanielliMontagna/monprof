@@ -147,6 +147,12 @@ monprof/
   - **Important**: `sessionBus()` returns an already connected bus - do NOT call `connect()` or `disconnect()`
 - **KScreen Backend Path**: Always use `/backend` path (call `requestBackend()` first if needed)
 - **Interface name**: Use `org.kde.kscreen.Backend` (lowercase 'kscreen'), not `org.kde.KScreen.Backend`
+- **DBus Variants**: `dbus-next` wraps all variant values in objects with `signature` and `value` properties - use `unwrapVariant()` recursively to extract actual values
+  - Outputs array may be wrapped: extract `outputs.value` if not an array
+  - Each output property (name, enabled, pos, etc.) may also be wrapped
+  - Mode IDs and mode properties also need unwrapping
+  - Position uses `pos` key, not `position`
+  - Booleans may come as numbers (1/0) or BigInt - convert appropriately
 
 ---
 

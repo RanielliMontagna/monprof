@@ -4,6 +4,7 @@
 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { IpcMainInvokeEvent } from "electron";
 import { BrowserWindow, app, ipcMain } from "electron";
 import { getConfig, setConfig } from "../../src/core/kscreen.js";
 import { getProfile, readProfiles, saveProfile } from "../../src/core/profiles.js";
@@ -15,24 +16,52 @@ const __dirname = dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
+  // Ensure preload path is absolute and exists
+  const preloadPath = join(__dirname, "preload.js");
+
   mainWindow = new BrowserWindow({
     width: 900,
     height: 600,
+    show: false, // Don't show until ready
     webPreferences: {
-      preload: join(__dirname, "preload.js"),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: true,
     },
   });
 
   // In development, load from Vite dev server
-  if (process.env.NODE_ENV === "development") {
-    mainWindow.loadURL("http://localhost:5173");
+  const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
+
+  if (isDev) {
+    const VITE_DEV_SERVER_PORT = 5173;
+    const VITE_DEV_SERVER_URL = `http://localhost:${VITE_DEV_SERVER_PORT}`;
+    const VITE_STARTUP_DELAY_MS = 1000;
+
+    // Wait a bit for Vite to start, then load
+    setTimeout(() => {
+      mainWindow?.loadURL(VITE_DEV_SERVER_URL).catch((error: unknown) => {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("[Electron] Failed to load Vite dev server:", errorMessage);
+        // Fallback to built files if dev server not available
+        const indexPath = join(__dirname, "../../dist/ui/index.html");
+        mainWindow?.loadFile(indexPath).catch((err: unknown) => {
+          const errMessage = err instanceof Error ? err.message : String(err);
+          console.error("[Electron] Failed to load built files:", errMessage);
+        });
+      });
+    }, VITE_STARTUP_DELAY_MS);
     mainWindow.webContents.openDevTools();
   } else {
     // In production, load from built files
-    mainWindow.loadFile(join(__dirname, "../../dist/ui/index.html"));
+    const indexPath = join(__dirname, "../../dist/ui/index.html");
+    mainWindow.loadFile(indexPath);
   }
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -58,12 +87,16 @@ app.on("window-all-closed", () => {
 
 // IPC Handlers
 
-ipcMain.handle("profiles:list", async () => {
+ipcMain.handle("profiles:list", async (_evt: IpcMainInvokeEvent) => {
   const data = await readProfiles();
   return data.profiles;
 });
 
-ipcMain.handle("profiles:apply", async (_evt, name: string) => {
+ipcMain.handle("profiles:apply", async (_evt: IpcMainInvokeEvent, name: string) => {
+  if (typeof name !== "string" || name.trim().length === 0) {
+    throw new Error("Profile name must be a non-empty string");
+  }
+
   const profile = await getProfile(name);
   if (!profile) {
     throw new Error(`Profile '${name}' not found`);
@@ -72,7 +105,11 @@ ipcMain.handle("profiles:apply", async (_evt, name: string) => {
   return true;
 });
 
-ipcMain.handle("profiles:save", async (_evt, name: string) => {
+ipcMain.handle("profiles:save", async (_evt: IpcMainInvokeEvent, name: string) => {
+  if (typeof name !== "string" || name.trim().length === 0) {
+    throw new Error("Profile name must be a non-empty string");
+  }
+
   const currentConfig = await getConfig();
   await saveProfile(name, { outputs: currentConfig.outputs });
   return true;
@@ -81,7 +118,7 @@ ipcMain.handle("profiles:save", async (_evt, name: string) => {
 ipcMain.handle(
   "profiles:update",
   async (
-    _evt,
+    _evt: IpcMainInvokeEvent,
     payload: {
       name: string;
       profile: {
@@ -96,12 +133,19 @@ ipcMain.handle(
       };
     }
   ) => {
+    if (typeof payload?.name !== "string" || payload.name.trim().length === 0) {
+      throw new Error("Profile name must be a non-empty string");
+    }
+    if (!payload?.profile || !Array.isArray(payload.profile.outputs)) {
+      throw new Error("Invalid profile data: outputs array is required");
+    }
+
     await saveProfile(payload.name, payload.profile);
     return true;
   }
 );
 
-ipcMain.handle("profiles:getCurrent", async () => {
+ipcMain.handle("profiles:getCurrent", async (_evt: IpcMainInvokeEvent) => {
   const config = await getConfig();
   return config;
 });

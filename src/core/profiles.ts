@@ -14,11 +14,14 @@ export interface ProfilesData {
   profiles: Record<string, Profile>;
 }
 
+const PROFILES_FILE_NAME = "profiles.json";
+const PROFILES_DIR = "data";
+
 /**
  * Get the path to profiles.json
  */
 function getProfilesPath(): string {
-  return join(process.cwd(), "data", "profiles.json");
+  return join(process.cwd(), PROFILES_DIR, PROFILES_FILE_NAME);
 }
 
 /**

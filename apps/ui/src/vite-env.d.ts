@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface Window {
-  monprof: {
+  monprof?: {
     list: () => Promise<Record<string, { outputs: unknown[] }>>;
     apply: (name: string) => Promise<boolean>;
     save: (name: string) => Promise<boolean>;

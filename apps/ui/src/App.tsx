@@ -12,10 +12,22 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadProfiles();
+    // Check if running in Electron
+    if (typeof window !== "undefined" && window.monprof) {
+      loadProfiles();
+    } else {
+      console.warn("Monprof API not available. Running outside Electron?");
+      setLoading(false);
+    }
   }, []);
 
   const loadProfiles = async () => {
+    if (!window.monprof) {
+      console.error("Monprof API not available");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const data = await window.monprof.list();
@@ -31,6 +43,11 @@ function App() {
   };
 
   const handleApplyProfile = async (name: string) => {
+    if (!window.monprof) {
+      alert("Monprof API not available");
+      return;
+    }
+
     try {
       await window.monprof.apply(name);
     } catch (error) {
@@ -40,6 +57,11 @@ function App() {
   };
 
   const handleSaveProfile = async (name: string) => {
+    if (!window.monprof) {
+      alert("Monprof API not available");
+      return;
+    }
+
     try {
       await window.monprof.save(name);
       await loadProfiles();
@@ -52,6 +74,11 @@ function App() {
   };
 
   const handleUpdateProfile = async (name: string, profile: Profile) => {
+    if (!window.monprof) {
+      alert("Monprof API not available");
+      return;
+    }
+
     try {
       await window.monprof.update({ name, profile });
       await loadProfiles();

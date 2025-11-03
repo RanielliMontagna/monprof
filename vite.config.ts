@@ -12,9 +12,14 @@ export default defineConfig({
   build: {
     outDir: join(__dirname, "dist/ui"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: join(__dirname, "apps/ui/index.html"),
+    },
   },
   server: {
     port: 5173,
     host: true,
+    strictPort: false,
   },
+  base: "./",
 });

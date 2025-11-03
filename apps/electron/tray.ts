@@ -4,7 +4,7 @@
 
 import { type BrowserWindow, Menu, type Tray, app } from "electron";
 import { setConfig } from "../../src/core/kscreen.js";
-import { listProfileNames, getProfile } from "../../src/core/profiles.js";
+import { getProfile, listProfileNames } from "../../src/core/profiles.js";
 
 const tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;

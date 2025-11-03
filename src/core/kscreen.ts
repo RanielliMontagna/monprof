@@ -3,7 +3,13 @@
  * Communicates with KDE's KScreen service via DBus
  */
 
-import { type Interface, MessageBus } from "dbus-next";
+// dbus-next is CommonJS, must use default import
+import dbusNext from "dbus-next";
+const { MessageBus } = dbusNext;
+
+// Type definition for Interface (dbus-next doesn't export types properly)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Interface = any;
 
 const KSCREEN_SERVICE = "org.kde.KScreen";
 const KSCREEN_PATH = "/backend";

@@ -9,12 +9,13 @@
     "dev:ui": "vite --host",
     "dev:electron": "electronmon dist/apps/electron/main.js",
     "build": "tsc && vite build && electron-builder",
-    "build:ts": "tsc",
+    "build:ts": "tsc -p apps/electron/tsconfig.json && tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "biome check .",
-    "lint:fix": "biome check --write ."
+    "lint:fix": "biome check --write .",
+    "postinstall": "node scripts/postinstall-electron.js"
   },
   "keywords": ["kde", "wayland", "monitor", "profiles", "electron"],
   "author": "",
